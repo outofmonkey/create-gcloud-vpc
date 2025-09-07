@@ -16,6 +16,9 @@ on:
           - apply
           - destroy
 
+env:
+  TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}  # <-- Expose GitHub variable to Terraform
+
 jobs:
   terraform:
     name: Terraform Plan
@@ -32,11 +35,13 @@ jobs:
 
       - name: Setup Terraform CLI
         uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.7
 
       - name: Terraform Format
         id: fmt
         run: terraform fmt -check
-       # continue-on-error: true
+        continue-on-error: true
 
       - name: Terraform Init
         id: init
@@ -56,7 +61,9 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')) && github.ref == 'refs/heads/main' }}
     environment:
-      name: production  # Manual approval required here
+      name: production
+    env:
+      TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}   # Make sure env vars available here too
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -68,6 +75,8 @@ jobs:
 
       - name: Setup Terraform CLI
         uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.7
 
       - name: Terraform Init
         run: terraform init -input=false
@@ -81,7 +90,9 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy' }}
     environment:
-      name: destroy  # Manual approval required here
+      name: destroy
+    env:
+      TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -93,7 +104,8 @@ jobs:
 
       - name: Setup Terraform CLI
         uses: hashicorp/setup-terraform@v3
-
+        with:
+          terraform_version: 1.5.7
 
       - name: Terraform Init
         run: terraform init -input=false
