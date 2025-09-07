@@ -5,6 +5,16 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Choose Terraform action'
+        required: true
+        default: 'apply'
+        type: choice
+        options:
+          - apply
+          - destroy
 
 jobs:
   terraform:
@@ -22,13 +32,11 @@ jobs:
 
       - name: Setup Terraform CLI
         uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.5.7
 
       - name: Terraform Format
         id: fmt
         run: terraform fmt -check
-        continue-on-error: true
+       # continue-on-error: true
 
       - name: Terraform Init
         id: init
@@ -36,27 +44,19 @@ jobs:
 
       - name: Terraform Validate
         id: validate
-        run: |
-          terraform validate -no-color | tee validate_output.txt
-          echo "stdout<<EOF" >> $GITHUB_OUTPUT
-          cat validate_output.txt >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+        run: terraform validate -no-color
 
       - name: Terraform Plan
         id: plan
-        run: |
-          terraform plan -no-color -input=false | tee plan.txt
-          echo "stdout<<EOF" >> $GITHUB_OUTPUT
-          cat plan.txt >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+        run: terraform plan -no-color -input=false
 
   apply:
     name: Terraform Apply (Manual Approval)
     needs: terraform
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: ${{ (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')) && github.ref == 'refs/heads/main' }}
     environment:
-      name: production  # This triggers the approval gate
+      name: production  # Manual approval required here
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -68,11 +68,35 @@ jobs:
 
       - name: Setup Terraform CLI
         uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.5.7
 
       - name: Terraform Init
         run: terraform init -input=false
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
+
+  destroy:
+    name: Terraform Destroy (Manual Approval)
+    needs: terraform
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy' }}
+    environment:
+      name: destroy  # Manual approval required here
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Setup Terraform CLI
+        uses: hashicorp/setup-terraform@v3
+
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve
