@@ -15,14 +15,15 @@ on:
         options:
           - apply
           - destroy
-          
+
 env:
-  TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}  # <-- Expose GitHub variable to Terraform
+  TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}  # <- Global env for all jobs
 
 jobs:
   terraform:
     name: Terraform Plan
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -58,11 +59,14 @@ jobs:
     name: Terraform Apply (Manual Approval)
     needs: terraform
     runs-on: ubuntu-latest
-    if: ${{ (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')) && github.ref == 'refs/heads/main' }}
+    if: >
+      ${{
+        (github.event_name == 'push' || 
+        (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')) 
+        && github.ref == 'refs/heads/main'
+      }}
     environment:
-      name: production
-    env:
-      TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}   # Make sure env vars available here too
+      name: production  # 👈 Manual approval required
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -87,11 +91,13 @@ jobs:
     name: Terraform Destroy (Manual Approval)
     needs: terraform
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy' }}
+    if: >
+      ${{
+        github.event_name == 'workflow_dispatch' &&
+        github.event.inputs.action == 'destroy'
+      }}
     environment:
-      name: destroy
-    env:
-      TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}
+      name: destroy  # 👈 Create "destroy" environment in GitHub with reviewers
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
