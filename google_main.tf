@@ -11,10 +11,6 @@ provider "google" {
   region      = "us-central1"
 }
 
-data "google_project" "acgproject" {
-  project_id = var.project_id
-}
-
 # Enable the Google API services
 resource "google_project_service" "api" {
   for_each                   = toset(var.apis_to_enable)
@@ -24,5 +20,6 @@ resource "google_project_service" "api" {
   disable_on_destroy         = false
 
 }
+
 
 
