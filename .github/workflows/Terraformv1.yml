@@ -15,7 +15,7 @@ on:
         options:
           - apply
           - destroy
-
+          
 env:
   TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}  # <-- Expose GitHub variable to Terraform
 
@@ -23,7 +23,6 @@ jobs:
   terraform:
     name: Terraform Plan
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
