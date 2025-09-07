@@ -8,7 +8,7 @@ terraform {
 }
 
 provider "google" {
-  credentials = file("cred.json")
+  ccredentials_json: ${{ secrets.GCP_SA_KEY }}
   region      = "us-west1"
 }
 
@@ -23,4 +23,5 @@ resource "google_project_service" "api" {
   service                    = each.value
   disable_dependent_services = true
   disable_on_destroy         = false
+
 }
