@@ -14,12 +14,12 @@ provider "google" {
 # Enable the Google API services
 resource "google_project_service" "api" {
   for_each                   = toset(var.apis_to_enable)
-  project                    = data.google_project.acgproject.project_id
   service                    = each.value
   disable_dependent_services = true
   disable_on_destroy         = false
 
 }
+
 
 
 
