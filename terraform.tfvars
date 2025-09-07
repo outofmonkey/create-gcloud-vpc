@@ -1,4 +1,4 @@
-project_id = "playground-s-11-39c8b8c6"
+project_id = ${{ vars.myproject_id}}
 apis_to_enable = [
   "cloudresourcemanager.googleapis.com",  # ENABLED TO RUN TERRAFORM 
   "compute.googleapis.com",
@@ -8,3 +8,4 @@ apis_to_enable = [
   "cloudfunctions.googleapis.com"
 
 ]
+
